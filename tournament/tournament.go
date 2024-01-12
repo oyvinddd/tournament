@@ -18,9 +18,6 @@ type (
 		// Title of the tournament
 		Title string `json:"title"`
 
-		// Code a six-digit code used whenever someone wants to join a tournament
-		Code int `json:"-"`
-
 		// Scoreboard shows the current status if the tournament
 		Scoreboard []user.User `json:"scoreboard"`
 
@@ -39,16 +36,13 @@ type (
 	}
 
 	JoinRequest struct {
-		ID uuid.UUID
-
-		Code int
+		TournamentID uuid.UUID `json:"tournament_id"`
 	}
 )
 
-func New(title string, code int) *Tournament {
+func New(title string) *Tournament {
 	return &Tournament{
 		ID:    uuid.New(),
 		Title: title,
-		Code:  code,
 	}
 }
