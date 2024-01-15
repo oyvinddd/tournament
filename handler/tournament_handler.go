@@ -18,7 +18,7 @@ func NewTournamentHandler(service tournament.Service) *TournamentHandler {
 
 func (handler TournamentHandler) Create(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	title := ps.ByName("title")
-	t, err := handler.service.Create(title)
+	t, err := handler.service.Create(r.Context(), title)
 	if err != nil {
 		respondWithStatus(w, http.StatusBadRequest)
 		return
@@ -35,7 +35,7 @@ func (handler TournamentHandler) Get(w http.ResponseWriter, r *http.Request, ps 
 		return
 	}
 
-	t, err := handler.service.Get(guid)
+	t, err := handler.service.Get(r.Context(), guid)
 	if err != nil {
 		respondWithStatus(w, http.StatusNotFound)
 		return
@@ -52,7 +52,7 @@ func (handler TournamentHandler) Join(w http.ResponseWriter, r *http.Request, ps
 		return
 	}
 
-	t, err := handler.service.Join(req)
+	t, err := handler.service.Join(r.Context(), req)
 	if err != nil {
 		respondWithStatus(w, http.StatusUnauthorized)
 		return

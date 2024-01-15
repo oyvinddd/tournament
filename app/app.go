@@ -3,6 +3,7 @@ package app
 import (
 	"github.com/julienschmidt/httprouter"
 	"net/http"
+	"time"
 	"tournament/handler"
 	"tournament/tournament"
 	"tournament/user"
@@ -20,6 +21,12 @@ const (
 	getTournamentPath string = "/api/v1/tournament"
 )
 
+const (
+	serverReadTimeout time.Duration = 15
+
+	serverWriteTimeout time.Duration = 15
+)
+
 type App struct {
 	server http.Server
 }
@@ -34,25 +41,16 @@ func New(address string) *App {
 
 	router := httprouter.New()
 	router.POST(signInPath, userHandler.SignIn)
-	router.GET(createTournamentPath, tournamentHandler.Create)
+	router.POST(createTournamentPath, handler.AuthMiddleware(tournamentHandler.Create))
 	router.GET(getTournamentPath, tournamentHandler.Get)
 	router.PUT(joinTournamentPath, tournamentHandler.Join)
 
-	// TODO: https://justinas.org/writing-http-middleware-in-go
 	return &App{server: http.Server{
-		Addr:              address,
-		Handler:           router,
-		TLSConfig:         nil,
-		ReadTimeout:       0,
-		ReadHeaderTimeout: 0,
-		WriteTimeout:      0,
-		IdleTimeout:       0,
-		MaxHeaderBytes:    0,
-		TLSNextProto:      nil,
-		ConnState:         nil,
-		ErrorLog:          nil,
-		BaseContext:       nil,
-		ConnContext:       nil,
+		Addr:         address,
+		Handler:      router,
+		TLSConfig:    nil,
+		ReadTimeout:  serverReadTimeout,
+		WriteTimeout: serverWriteTimeout,
 	}}
 }
 
