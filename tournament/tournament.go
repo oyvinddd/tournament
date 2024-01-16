@@ -7,22 +7,22 @@ import (
 )
 
 type (
+	ResetInterval int
+
 	Tournament struct {
 
 		// ID of the tournament
 		ID uuid.UUID `json:"id"`
 
-		// Admin the user administrating said tournament (FK)
-		AdminID uuid.UUID `json:"admin_id"`
-
 		// Title of the tournament
 		Title string `json:"title"`
+
+		ResetInterval ResetInterval `json:"reset_interval"`
 
 		// Scoreboard shows the current status if the tournament
 		Scoreboard []user.User `json:"scoreboard"`
 
-		// LatestMatches is a list of the latest matches players in the tournament
-		LatestMatches []Match `json:"latest_matches"`
+		CreatedAt time.Time `json:"created_at"`
 	}
 
 	Match struct {

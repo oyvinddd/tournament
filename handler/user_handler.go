@@ -15,7 +15,7 @@ func NewUserHandler(service user.Service) *AuthHandler {
 }
 
 func (handler AuthHandler) SignIn(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	usr, err := handler.service.SignIn()
+	usr, err := handler.service.SignIn(r.Context())
 
 	if err != nil {
 		respondWithStatus(w, http.StatusUnauthorized)
@@ -23,4 +23,8 @@ func (handler AuthHandler) SignIn(w http.ResponseWriter, r *http.Request, ps htt
 	}
 
 	respondWithJSON(w, usr)
+}
+
+func (handler AuthHandler) InviteUser(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
 }
