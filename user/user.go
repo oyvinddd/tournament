@@ -37,6 +37,8 @@ type (
 
 		MatchesWon int `json:"matches_won"`
 
+		TournamentsWon int `json:"tournaments_won"`
+
 		LastSeen time.Time `json:"last_seen"`
 	}
 
@@ -55,6 +57,12 @@ type (
 
 		InviteeID uuid.UUID `json:"invitee_id"`
 	}
+
+	SignInContainer struct {
+		User User `json:"user"`
+
+		AccessToken string `json:"access_token"`
+	}
 )
 
 func New(username, email string) *User {
@@ -63,11 +71,11 @@ func New(username, email string) *User {
 		Username:       username,
 		Email:          email,
 		CreatedAt:      time.Now(),
-		TournamentID:   nil,
 		TournamentRole: RoleNoRole,
-		Score:          0,
-		MatchesPlayed:  0,
-		MatchesWon:     0,
 		LastSeen:       time.Now(),
 	}
+}
+
+func NewSignInContainer(user User, accessToken string) *SignInContainer {
+	return &SignInContainer{User: user, AccessToken: accessToken}
 }

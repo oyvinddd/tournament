@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"encoding/json"
 	"github.com/julienschmidt/httprouter"
 	"net/http"
 	"tournament/user"
@@ -15,14 +16,23 @@ func NewUserHandler(service user.Service) *AuthHandler {
 }
 
 func (handler AuthHandler) SignIn(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	usr, err := handler.service.SignIn(r.Context())
+	token := struct {
+		IdentityToken string `json:"identity_token"`
+	}{}
+
+	if err := json.NewDecoder(r.Body).Decode(&token); err != nil {
+		respondWithStatus(w, http.StatusUnauthorized)
+		return
+	}
+
+	container, err := handler.service.SignIn(r.Context(), token.IdentityToken)
 
 	if err != nil {
 		respondWithStatus(w, http.StatusUnauthorized)
 		return
 	}
 
-	respondWithJSON(w, usr)
+	respondWithJSON(w, container)
 }
 
 func (handler AuthHandler) InviteUser(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {

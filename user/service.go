@@ -10,9 +10,7 @@ type (
 	Service interface {
 
 		// SignIn using Apple
-		SignIn(ctx context.Context) (User, error)
-
-		CreateUser(ctx context.Context, user User) (User, error)
+		SignIn(ctx context.Context, identityToken string) (*SignInContainer, error)
 
 		// InviteUser to the inviting users tournament
 		InviteUser(ctx context.Context, userID string) error
@@ -21,34 +19,42 @@ type (
 		GetInvitations(ctx context.Context) ([]Invite, error)
 	}
 
-	LiveService struct {
+	liveService struct {
 		connection *pgxpool.Pool
 	}
 )
 
 func NewService() Service {
-	return &LiveService{}
+	return &liveService{}
 }
 
-func (service *LiveService) SignIn(ctx context.Context) (User, error) {
-	return User{}, nil
-}
+func (service *liveService) SignIn(ctx context.Context, identityToken string) (*SignInContainer, error) {
 
-func (service *LiveService) CreateUser(ctx context.Context, user User) (User, error) {
-	query := `INSERT INTO tr.users (id, email, username) VALUES ($1, $2, $3) RETURNING (id, email, username)`
+	// TODO: validate Apple identity token using public key from Apple
 
-	// FIXME: returned values are never used
+	// create query
+	query := `INSERT INTO tr.users (email, username)
+	VALUES ($1, $2)
+	ON CONFLICT (email) DO UPDATE
+	SET email = EXCLUDED.email
+	RETURNING id, username, email;`
+
+	// execute query
 	var id uuid.UUID
 	var email, username string
-	err := service.connection.QueryRow(ctx, query, user.ID, user.Email, user.Username).Scan(&id, &email, &username)
-	if err != nil {
-		return User{}, err
+	if err := service.connection.QueryRow(ctx, query, id, email, username).Scan(&id, &email, &username); err != nil {
+		return nil, err
 	}
 
-	return user, nil
+	user := New(email, username)
+	user.ID = id
+
+	// TODO: generate access token for the newly signed in user
+
+	return NewSignInContainer(*user, ""), nil
 }
 
-func (service *LiveService) InviteUser(ctx context.Context, userID string) error {
+func (service *liveService) InviteUser(ctx context.Context, userID string) error {
 	_, err := uuid.FromBytes([]byte(userID))
 	if err != nil {
 		return err
@@ -56,6 +62,6 @@ func (service *LiveService) InviteUser(ctx context.Context, userID string) error
 	return nil
 }
 
-func (service *LiveService) GetInvitations(ctx context.Context) ([]Invite, error) {
+func (service *liveService) GetInvitations(ctx context.Context) ([]Invite, error) {
 	return nil, nil
 }

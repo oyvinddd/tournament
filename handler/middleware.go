@@ -1,19 +1,24 @@
 package handler
 
 import (
+	"context"
 	"github.com/julienschmidt/httprouter"
 	"net/http"
+	"tournament/jwtutil"
 )
-
-const headerKeyAuthorization string = "Authorization"
 
 func AuthMiddleware(next httprouter.Handle) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		token := r.Header.Get(headerKeyAuthorization)
-		if token == "" {
-			respondWithStatus(w, http.StatusUnauthorized)
+		// for regular secure routes, the "typ" claim can safely be ignored
+		sub, _, err := jwtutil.ValidateTokenFromRequest(r)
+		if err != nil {
+			//handler.RespondWithJSON(w, http.StatusUnauthorized, err.Error())
+			respondWithError(w, http.StatusUnauthorized, err)
 			return
 		}
-		next(w, r, ps)
+
+		// the "sub" claim should contain the user ID
+		ctx := context.WithValue(r.Context(), "sub", sub)
+		next(w, r.WithContext(ctx), ps)
 	}
 }
