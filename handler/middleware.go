@@ -2,9 +2,15 @@ package handler
 
 import (
 	"context"
+	"errors"
+	"github.com/google/uuid"
 	"github.com/julienschmidt/httprouter"
 	"net/http"
 	"tournament/jwtutil"
+)
+
+const (
+	userIDContextKey string = "user_id"
 )
 
 func AuthMiddleware(next httprouter.Handle) httprouter.Handle {
@@ -18,7 +24,24 @@ func AuthMiddleware(next httprouter.Handle) httprouter.Handle {
 		}
 
 		// the "sub" claim should contain the user ID
-		ctx := context.WithValue(r.Context(), "sub", sub)
-		next(w, r.WithContext(ctx), ps)
+		next(w, r.WithContext(contextWithUserID(r.Context(), sub)), ps)
 	}
+}
+
+func contextWithUserID(ctx context.Context, userID interface{}) context.Context {
+	return context.WithValue(ctx, userIDContextKey, userID)
+}
+
+func userIDFromContext(ctx context.Context) (uuid.UUID, error) {
+	userID, ok := ctx.Value(userIDContextKey).(string)
+	if !ok {
+		return uuid.Nil, errors.New("no user ID found")
+	}
+
+	guid, err := uuid.FromBytes([]byte(userID))
+	if err != nil {
+		return uuid.Nil, err
+	}
+
+	return guid, nil
 }

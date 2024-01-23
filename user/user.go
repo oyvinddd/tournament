@@ -48,14 +48,10 @@ type (
 		InviteeID uuid.UUID `json:"invitee_id"`
 
 		CreatedAt time.Time `json:"created_at"`
-
-		ExpiresAt time.Time `json:"expires_at"`
 	}
 
-	InviteRequest struct {
+	JoinRequest struct {
 		TournamentID uuid.UUID `json:"tournament_id"`
-
-		InviteeID uuid.UUID `json:"invitee_id"`
 	}
 
 	SignInContainer struct {

@@ -2,7 +2,6 @@ package handler
 
 import (
 	"encoding/json"
-	"github.com/google/uuid"
 	"github.com/julienschmidt/httprouter"
 	"net/http"
 	"tournament/tournament"
@@ -17,8 +16,14 @@ func NewTournamentHandler(service tournament.Service) *TournamentHandler {
 }
 
 func (handler TournamentHandler) Create(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	title := ps.ByName("title")
-	t, err := handler.service.Create(r.Context(), title)
+	// get the user ID from the current request context
+	userID, err := userIDFromContext(r.Context())
+	if err != nil {
+		respondWithStatus(w, http.StatusBadRequest)
+		return
+	}
+
+	t, err := handler.service.CreateTournament(r.Context(), userID, title)
 	if err != nil {
 		respondWithStatus(w, http.StatusBadRequest)
 		return
@@ -28,35 +33,42 @@ func (handler TournamentHandler) Create(w http.ResponseWriter, r *http.Request, 
 }
 
 func (handler TournamentHandler) Get(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	id := ps.ByName("id")
-	guid, err := uuid.FromBytes([]byte(id))
+	// get the user ID from the current request context
+	userID, err := userIDFromContext(r.Context())
 	if err != nil {
 		respondWithStatus(w, http.StatusBadRequest)
 		return
 	}
 
-	t, err := handler.service.Get(r.Context(), guid)
+	// get the data for the tournament the current user is a part of
+	trn, err := handler.service.GetTournament(r.Context(), userID)
 	if err != nil {
 		respondWithStatus(w, http.StatusNotFound)
 		return
 	}
 
-	respondWithJSON(w, t)
+	respondWithJSON(w, trn)
 }
 
 func (handler TournamentHandler) Join(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-
-	var req tournament.JoinRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	// get the user ID from the current request context
+	userID, err := userIDFromContext(r.Context())
+	if err != nil {
 		respondWithStatus(w, http.StatusBadRequest)
 		return
 	}
 
-	t, err := handler.service.Join(r.Context(), req)
+	var joinRequest tournament.JoinRequest
+	if err := json.NewDecoder(r.Body).Decode(&joinRequest); err != nil {
+		respondWithStatus(w, http.StatusBadRequest)
+		return
+	}
+
+	err = handler.service.JoinTournament(r.Context(), userID, joinRequest.TournamentID)
 	if err != nil {
 		respondWithStatus(w, http.StatusUnauthorized)
 		return
 	}
 
-	respondWithJSON(w, t)
+	respondWithStatus(w, http.StatusOK)
 }

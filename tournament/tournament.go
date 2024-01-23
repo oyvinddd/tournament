@@ -6,6 +6,12 @@ import (
 	"tournament/user"
 )
 
+const (
+	ResetWeekly ResetInterval = 0
+
+	ResetMonthly ResetInterval = 1
+)
+
 type (
 	ResetInterval int
 
@@ -22,7 +28,7 @@ type (
 		// Scoreboard shows the current status if the tournament
 		Scoreboard []user.User `json:"scoreboard"`
 
-		CreatedAt time.Time `json:"created_at"`
+		CreatedAt time.Time `json:"-"`
 	}
 
 	Match struct {
