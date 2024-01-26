@@ -29,7 +29,8 @@ func (handler AuthHandler) SignIn(w http.ResponseWriter, r *http.Request, ps htt
 	container, err := handler.service.SignIn(r.Context(), token.IdentityToken)
 
 	if err != nil {
-		respondWithStatus(w, http.StatusUnauthorized)
+		respondWithError(w, http.StatusUnauthorized, err)
+		//respondWithStatus(w, http.StatusUnauthorized)
 		return
 	}
 

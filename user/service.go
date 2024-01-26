@@ -5,6 +5,8 @@ import (
 	"errors"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"time"
+	"tournament/jwtutil"
 )
 
 type (
@@ -57,8 +59,12 @@ func (service *liveService) SignIn(ctx context.Context, identityToken string) (*
 	user.ID = id
 
 	// TODO: generate access token for the newly signed in user
+	token, err := jwtutil.GenerateToken(id.String(), 0, time.Minute*60)
+	if err != nil {
+		return nil, errors.New("unable to generate token")
+	}
 
-	return NewSignInContainer(*user, ""), nil
+	return NewSignInContainer(*user, token), nil
 }
 
 func (service *liveService) InviteUser(ctx context.Context, inviterID, inviteeID uuid.UUID) error {
