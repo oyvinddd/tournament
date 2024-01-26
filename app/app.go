@@ -25,9 +25,9 @@ const (
 )
 
 const (
-	serverReadTimeout time.Duration = 15
+	serverReadTimeout = time.Second * 15
 
-	serverWriteTimeout time.Duration = 15
+	serverWriteTimeout = time.Second * 15
 )
 
 type App struct {
@@ -41,7 +41,7 @@ func New(address string) *App {
 		log.Fatalf("Error connecting to database: %f\n", err)
 	}
 
-	authService := user.NewService()
+	authService := user.NewService(dbConn)
 	tournamentService := tournament.NewService(dbConn)
 
 	userHandler := handler.NewUserHandler(authService)
@@ -57,7 +57,6 @@ func New(address string) *App {
 	return &App{server: http.Server{
 		Addr:         address,
 		Handler:      router,
-		TLSConfig:    nil,
 		ReadTimeout:  serverReadTimeout,
 		WriteTimeout: serverWriteTimeout,
 	}}

@@ -16,12 +16,13 @@ func NewUserHandler(service user.Service) *AuthHandler {
 }
 
 func (handler AuthHandler) SignIn(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
 	token := struct {
 		IdentityToken string `json:"identity_token"`
 	}{}
 
 	if err := json.NewDecoder(r.Body).Decode(&token); err != nil {
-		respondWithStatus(w, http.StatusUnauthorized)
+		respondWithStatus(w, http.StatusBadRequest)
 		return
 	}
 

@@ -10,9 +10,10 @@ type (
 	Service interface {
 		CreateTournament(ctx context.Context, userID uuid.UUID, title string) (*Tournament, error)
 
-		GetTournament(ctx context.Context, userID uuid.UUID) (*Tournament, error)
-
+		// JoinTournament joins a given tournament
 		JoinTournament(ctx context.Context, userID, tournamentID uuid.UUID) error
+
+		GetTournament(ctx context.Context, userID uuid.UUID) (*Tournament, error)
 	}
 
 	liveService struct {
@@ -20,17 +21,22 @@ type (
 	}
 )
 
-func NewService(connection *pgxpool.Pool) Service {
-	return &liveService{db: connection}
+func NewService(db *pgxpool.Pool) Service {
+	return &liveService{db: db}
 }
 
 func (service *liveService) CreateTournament(ctx context.Context, userID uuid.UUID, title string) (*Tournament, error) {
+	tx, err := service.db.Begin(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback(ctx)
 
 	// first we insert a new row into the table representing a tournament
 	query1 := `INSERT INTO tr.tournaments (title) VALUES ($1) RETURNING id;`
 
 	var tournamentID uuid.UUID
-	if err := service.db.QueryRow(ctx, query1, title).Scan(&tournamentID); err != nil {
+	if err := tx.QueryRow(ctx, query1, title).Scan(&tournamentID); err != nil {
 		return nil, err
 	}
 
@@ -43,28 +49,25 @@ func (service *liveService) CreateTournament(ctx context.Context, userID uuid.UU
 	// secondly we update the current user row with the newly created tournament ID
 	// the current user is now the tournament owner
 	query2 := `UPDATE INTO tr.users (tournament_id, tournament_role) VALUES ($1, $2) WHERE id = $3;`
-	service.db.QueryRow(ctx, query2, tournamentID)
+	if _, err := tx.Exec(ctx, query2, tournamentID, 3, userID); err != nil {
+		return nil, err
+	}
 
+	if err := tx.Commit(ctx); err != nil {
+		return nil, err
+
+	}
 	return &tournament, nil
 }
 
 func (service *liveService) GetTournament(ctx context.Context, userID uuid.UUID) (*Tournament, error) {
-	tx, err := service.db.Begin(ctx)
-	if err != nil {
+	query := `SELECT * FROM tr.tournaments WHERE id = (SELECT tournament_id FROM tr.users WHERE id = $1);`
+
+	var tournament Tournament
+	if err := service.db.QueryRow(ctx, query, userID).Scan(&tournament); err != nil {
 		return nil, err
 	}
-
-	defer tx.Rollback(ctx)
-
-	/*
-		query := `SELECT id, title FROM tr.tournaments WHERE url_name = $1`
-		var a artist.Artist
-		row := repo.db.conn.QueryRow(ctx, stmt, urlName)
-		if err := row.Scan(&a.ID, &a.Name, &a.ProfileImage, &a.BackgroundImage); err != nil {
-			return nil, errArtistNotFound
-		}
-		return &a, nil
-	*/
+	return &tournament, nil
 }
 
 func (service *liveService) JoinTournament(ctx context.Context, userID, tournamentID uuid.UUID) error {

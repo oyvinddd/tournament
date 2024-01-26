@@ -31,8 +31,8 @@ type (
 	}
 )
 
-func NewService() Service {
-	return &liveService{}
+func NewService(db *pgxpool.Pool) Service {
+	return &liveService{db: db}
 }
 
 func (service *liveService) SignIn(ctx context.Context, identityToken string) (*SignInContainer, error) {

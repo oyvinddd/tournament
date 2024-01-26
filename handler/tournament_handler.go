@@ -23,13 +23,21 @@ func (handler TournamentHandler) Create(w http.ResponseWriter, r *http.Request, 
 		return
 	}
 
-	t, err := handler.service.CreateTournament(r.Context(), userID, title)
+	var requestBody struct {
+		Title string `json:"title"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&requestBody); err != nil {
+		respondWithStatus(w, http.StatusBadRequest)
+		return
+	}
+
+	trn, err := handler.service.CreateTournament(r.Context(), userID, requestBody.Title)
 	if err != nil {
 		respondWithStatus(w, http.StatusBadRequest)
 		return
 	}
 
-	respondWithJSON(w, t)
+	respondWithJSON(w, trn)
 }
 
 func (handler TournamentHandler) Get(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
