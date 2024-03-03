@@ -1,0 +1,45 @@
+-------- SCHEMA --------
+
+CREATE SCHEMA tr;
+
+-------- EXTENSIONS --------
+
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-------- CREATE TABLES --------
+
+DROP TABLE IF EXISTS tr.users, tr.tournaments CASCADE;
+
+CREATE TABLE IF NOT EXISTS tr.users
+(
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v1(),
+    email VARCHAR(255) NOT NULL UNIQUE,
+    username VARCHAR(255) NOT NULL UNIQUE,
+    tournament_id UUID REFERENCES tr.tournaments(id) ON DELETE CASCADE DEFAULT(NULL),
+    tournament_role INT NOT NULL DEFAULT(0),
+    score INT DEFAULT(0),
+    matches_played INT DEFAULT(0),
+    matches_won INT DEFAULT(0),
+    created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW(),
+    last_seen TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS tr.tournaments
+(
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v1(),
+    title VARCHAR(255) NOT NULL,
+    reset_interval INT NOT NULL DEFAULT(0),
+    created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS tr.invitations
+(
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v1(),
+    invitee_id UUID REFERENCES tr.users(id) ON DELETE CASCADE
+);
+
+-------- INSERTIONS --------
+
+-- Insert regular account into the account table
+INSERT INTO tr.users (id, email, username)
+VALUES ('695d65c6-34f5-11eb-9005-f218982bf66d', 'oyvind.s.hauge@gmail.com', 'oyvinddd');

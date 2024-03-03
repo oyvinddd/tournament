@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"fmt"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/julienschmidt/httprouter"
 	"log"
@@ -36,7 +37,15 @@ type App struct {
 
 func New(address string) *App {
 
-	dbConn, err := pgxpool.New(context.Background(), "") // TODO: connection string
+	//dbURI := buildDatabseURI("localhost:5432/postgres", "postgres", "Test1234")
+	dbURI := "postgresql://postgres:Test1234@localhost:5432/postgres"
+	fmt.Printf("PG connection URL: %v\n", dbURI)
+	dbConn, err := pgxpool.New(context.Background(), dbURI)
+	_, err = dbConn.Exec(context.Background(), ";")
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	if err != nil {
 		log.Fatalf("Error connecting to database: %f\n", err)
 	}
@@ -64,4 +73,8 @@ func New(address string) *App {
 
 func (app *App) Run() error {
 	return app.server.ListenAndServe()
+}
+
+func buildDatabseURI(host, username, password string) string {
+	return fmt.Sprintf("postgresql://%s:%s@%s", username, password, host)
 }
